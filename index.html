@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 	<head>
 		<meta charset="UTF-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -8,15 +8,18 @@
 		<script type="text/javascript" src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
 		<script type="text/javascript" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script>
 		<script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
 	</head>
 	<body>
 		<div id="root"></div>
 
 		<script type="text/babel">
 			const element = (
-				<div>
-					<h1>React from scratch</h1>
-					<p>React is awesome</p>
+				<div className="container">
+					<article>
+						<h1>React from scratch</h1>
+						<p>React is awesome</p>
+					</article>
 				</div>
 			)
 			const container = document.getElementById("root")
