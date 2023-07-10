@@ -5,26 +5,32 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>React from scratch</title>
-		<script type="text/javascript" src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
-		<script type="text/javascript" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script>
+		<!-- add react logo -->
+		<link rel="icon" href="https://reactjs.org/favicon.ico" />
+		<!-- <script type="text/javascript" src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
+		<script type="text/javascript" src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script> -->
 		<script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
+		<script src="didact.js" type="module"></script>
 	</head>
 	<body>
 		<div id="root"></div>
 
 		<script type="text/babel">
+			/** @jsx Didact.createElement */
 			const element = (
-				<div className="container">
+				<div className="container" id="test">
 					<article>
 						<h1>React from scratch</h1>
 						<p>React is awesome</p>
 					</article>
 				</div>
 			)
+
 			const container = document.getElementById("root")
-			const root = ReactDOM.createRoot(container)
-			root.render(element)
+			
+			// const root = ReactDOM.createRoot(container)
+			Didact.render(element, container)
 		</script>
 	</body>
 </html>
