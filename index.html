@@ -17,13 +17,33 @@
 		<div id="root"></div>
 
 		<script type="text/babel">
+			function useIncrement(initialValue = 0) {
+				const [value, setValue] = Didact.useState(initialValue)
+				const increment = function () {
+					setValue(value + 1)
+				}
+				return [value, increment]
+			}
+
+			function Welcome({ name }) {
+				const [count, increment] = useIncrement(0)
+				return (
+					<div>
+						<h1>Hello, {name}</h1>
+						<p>Count: {count}</p>
+						<button onclick={increment}>Increment</button>
+					</div>
+				)
+			}
+
 			/** @jsx Didact.createElement */
 			function step1() {
 				console.log("step1")
 				const element = (
 					<div className="container" id="test">
 						<article>
-							<h1>React from scratch</h1>
+							<Welcome name="Sara" />
+							<h1>React from scratch !</h1>
 							<p>React is awesome</p>
 							<button onclick={step2}>Update</button>
 						</article>

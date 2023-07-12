@@ -1,23 +1,17 @@
+const isEvent = (key) => key.startsWith("on")
+const isProperty = (key) => key !== "children"
+const eventName = (key) => key.toLowerCase().substring(2)
+
 export function createDom(fiber) {
 	const dom =
 		fiber.type === "TEXT_ELEMENT"
 			? document.createTextNode(fiber.props.nodeValue)
 			: document.createElement(fiber.type)
 
-	if (fiber.props) {
-		Object.keys(fiber.props)
-			.filter((key) => key !== "children")
-			.forEach((name) => {
-				dom[name] = fiber.props[name]
-			})
-	}
+	updateDom(dom, {}, fiber.props)
 
 	return dom
 }
-
-const isEvent = (key) => key.startsWith("on")
-const isProperty = (key) => key !== "children"
-const eventName = (key) => key.toLowerCase().substring(2)
 
 export function updateDom(dom, prevProps, nextProps) {
 	// Supprime les anciennes propriétés

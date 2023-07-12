@@ -5,6 +5,8 @@ let nextUnitOfWork = null
 let wipRoot = null
 let currentRoot = null
 let deletions = []
+let hookIndex = null
+let wipFiber = null
 
 /**
  * Ajoute la racine à l'arbre du DOM
@@ -20,19 +22,34 @@ function commitWork(fiber) {
 	if (!fiber) {
 		return
 	}
-	const domParent = fiber.parent.dom
+
+	let domParentFiber = fiber.parent
+
+	while (!domParentFiber.dom) {
+		domParentFiber = domParentFiber.parent
+	}
+
+	const domParent = domParentFiber.dom
 
 	if (fiber.effectTag === "PLACEMENT" && fiber.dom !== null) {
 		domParent.appendChild(fiber.dom)
 	} else if (fiber.effectTag === "DELETION") {
-		domParent.removeChild(fiber.dom)
+		commitDeletion(fiber, domParent)
 		return
 	} else if (fiber.effectTag === "UPDATE" && fiber.dom !== null) {
 		updateDom(fiber.dom, fiber.alternate.props, fiber.props)
+		domParent.appendChild(fiber.dom)
 	}
-
-	commitWork(fiber.sibling)
 	commitWork(fiber.child)
+	commitWork(fiber.sibling)
+}
+
+function commitDeletion(fiber, domParent) {
+	if (fiber.dom) {
+		domParent.removeChild(fiber.dom)
+	} else {
+		commitDeletion(fiber.child, domParent)
+	}
 }
 
 /**
@@ -58,12 +75,11 @@ function render(element, container) {
  * @returns
  */
 function performUnitOfWork(fiber) {
-	if (!fiber.dom) {
-		fiber.dom = createDom(fiber)
+	if (fiber.type instanceof Function) {
+		updateFunctionComponent(fiber)
+	} else {
+		updateHostComponent(fiber)
 	}
-
-	const elements = fiber.props.children
-	reconcileChildren(fiber, elements)
 
 	if (fiber.child) {
 		return fiber.child
@@ -78,6 +94,40 @@ function performUnitOfWork(fiber) {
 	}
 
 	return null
+}
+
+function updateFunctionComponent(fiber) {
+	wipFiber = fiber
+	hookIndex = 0
+	wipFiber.hooks = []
+	const children = [fiber.type(fiber.props)]
+	reconcileChildren(fiber, children)
+}
+
+function updateHostComponent(fiber) {
+	if (!fiber.dom) {
+		fiber.dom = createDom(fiber)
+	}
+
+	const elements = fiber.props.children
+	reconcileChildren(fiber, elements)
+}
+
+function useState(initial) {
+	const oldHook = wipFiber.alternate && wipFiber.alternate.hooks && wipFiber.alternate.hooks[hookIndex]
+	const hook = {
+		state: oldHook ? oldHook.state : initial,
+		queue: [],
+	}
+	wipFiber.hooks.push(hook)
+	hookIndex++
+
+	const setState = (state) => {
+		hook.state = state
+		render(currentRoot.props.children[0], currentRoot.dom)
+	}
+
+	return [hook.state, setState]
 }
 
 function reconcileChildren(wipFiber, elements) {
@@ -154,6 +204,7 @@ requestIdleCallback(workLoop)
 window.Didact = {
 	render,
 	createElement,
+	useState,
 }
 
 export default Didact
