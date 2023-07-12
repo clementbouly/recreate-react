@@ -1,20 +1,55 @@
-import { createDom } from "./didact/dom"
+import { createDom, updateDom } from "./didact/dom"
 import { createElement } from "./didact/vdom"
 
 let nextUnitOfWork = null
+let wipRoot = null
+let currentRoot = null
+let deletions = []
 
 /**
- *
+ * Ajoute la racine à l'arbre du DOM
+ */
+function commitRoot() {
+	deletions.forEach(commitWork)
+	commitWork(wipRoot.child)
+	currentRoot = wipRoot
+	wipRoot = null
+}
+
+function commitWork(fiber) {
+	if (!fiber) {
+		return
+	}
+	const domParent = fiber.parent.dom
+
+	if (fiber.effectTag === "PLACEMENT" && fiber.dom !== null) {
+		domParent.appendChild(fiber.dom)
+	} else if (fiber.effectTag === "DELETION") {
+		domParent.removeChild(fiber.dom)
+		return
+	} else if (fiber.effectTag === "UPDATE" && fiber.dom !== null) {
+		updateDom(fiber.dom, fiber.alternate.props, fiber.props)
+	}
+
+	commitWork(fiber.sibling)
+	commitWork(fiber.child)
+}
+
+/**
+ * Rend l'élement en l'ajoutant au dom
  * @param {object} element
  * @param {HTMLElement} container
  */
 function render(element, container) {
-	nextUnitOfWork = {
+	wipRoot = {
 		dom: container,
 		props: {
 			children: [element],
 		},
+		alternate: currentRoot,
 	}
+	nextUnitOfWork = wipRoot
+	deletions = []
 }
 
 /**
@@ -27,34 +62,8 @@ function performUnitOfWork(fiber) {
 		fiber.dom = createDom(fiber)
 	}
 
-	if (fiber.parent) {
-		fiber.parent.dom.appendChild(fiber.dom)
-	}
-
 	const elements = fiber.props.children
-	let index = 0
-	let prevSibling = null
-
-	while (index < elements.length) {
-		const element = elements[index]
-
-		const newFiber = {
-			type: element.type,
-			props: element.props,
-			parent: fiber,
-			dom: null,
-		}
-
-		if (index === 0) {
-			fiber.child = newFiber
-		} else {
-			prevSibling.sibling = newFiber
-		}
-
-		prevSibling = newFiber
-		index++
-	}
-	console.log("fiber", fiber)
+	reconcileChildren(fiber, elements)
 
 	if (fiber.child) {
 		return fiber.child
@@ -71,11 +80,70 @@ function performUnitOfWork(fiber) {
 	return null
 }
 
+function reconcileChildren(wipFiber, elements) {
+	let index = 0
+	let prevSibling = null
+	let oldFiber = wipFiber.alternate && wipFiber.alternate.child
+
+	while (index < elements.length || oldFiber != null) {
+		const element = elements[index]
+		const sameType = oldFiber && element && element.type === oldFiber.type
+		let newFiber = null
+
+		if (sameType) {
+			// TODO update the node
+			newFiber = {
+				type: element.type,
+				props: element.props,
+				parent: wipFiber,
+				dom: oldFiber.dom,
+				alternate: oldFiber,
+				effectTag: "UPDATE",
+			}
+		}
+
+		if (element && !sameType) {
+			// TODO add this node
+			newFiber = {
+				type: element.type,
+				props: element.props,
+				parent: wipFiber,
+				dom: null,
+				alternate: null,
+				effectTag: "PLACEMENT",
+			}
+		}
+
+		if (oldFiber && !sameType) {
+			// TODO delete the oldFiber's node
+			oldFiber.effectTag = "DELETION"
+			deletions.push(oldFiber)
+		}
+
+		if (oldFiber) {
+			oldFiber = oldFiber.sibling
+		}
+
+		if (index === 0) {
+			wipFiber.child = newFiber
+		} else if (element) {
+			prevSibling.sibling = newFiber
+		}
+
+		prevSibling = newFiber
+		index++
+	}
+}
+
 function workLoop(deadline) {
 	let shouldYield = false
 	while (nextUnitOfWork && !shouldYield) {
 		nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
 		shouldYield = deadline.timeRemaining() < 1
+	}
+
+	if (!nextUnitOfWork && wipRoot) {
+		commitRoot()
 	}
 
 	requestIdleCallback(workLoop)

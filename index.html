@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -18,19 +18,43 @@
 
 		<script type="text/babel">
 			/** @jsx Didact.createElement */
-			const element = (
-				<div className="container" id="test">
-					<article>
-						<h1>React from scratch</h1>
-						<p>React is awesome</p>
-					</article>
-				</div>
-			)
+			function step1() {
+				console.log("step1")
+				const element = (
+					<div className="container" id="test">
+						<article>
+							<h1>React from scratch</h1>
+							<p>React is awesome</p>
+							<button onclick={step2}>Update</button>
+						</article>
+					</div>
+				)
+				Didact.render(element, document.getElementById("root"))
+			}
 
-			const container = document.getElementById("root")
-			
-			// const root = ReactDOM.createRoot(container)
-			Didact.render(element, container)
+			function step2() {
+				console.log("step2")
+				Didact.render(
+					<div className="container" id="test">
+						<article>
+							<h1>React from scratch UPDATED</h1>
+							<button onclick={step1}>reset</button>
+						</article>
+					</div>,
+					document.getElementById("root")
+				)
+			}
+
+			step1()
+
+			// Light and dark mode based on time
+			const html = document.querySelector("html")
+			const currentHour = new Date().getHours()
+			if (currentHour < 6 || currentHour > 20) {
+				html.dataset.theme = "dark"
+			} else {
+				html.dataset.theme = "light"
+			}
 		</script>
 	</body>
 </html>
